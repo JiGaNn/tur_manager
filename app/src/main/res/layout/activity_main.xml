@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:background="@color/teal_200"
+    tools:context=".MainActivity">
+
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50sp"
+        android:fontFamily="@font/montserrat_alternates_bold"
+        android:text="Tur app"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textSize="30sp" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/cities"
+        android:layout_marginHorizontal="100sp"
+        android:layout_marginTop="30sp"
+        android:backgroundTint="@color/black"
+        android:fontFamily="@font/montserrat_alternates_bold"
+        android:text="Result" />
+
+    <EditText
+        android:id="@+id/cities"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/title"
+        android:ems="10"
+        android:layout_marginHorizontal="40sp"
+        android:layout_marginTop="20sp"
+        android:fontFamily="sans-serif"
+        android:hint="Enter cities that you want to visit"
+        android:inputType="textMultiLine"
+        android:minHeight="48dp"
+        android:textAlignment="center" />
+
+    <MultiAutoCompleteTextView
+        android:id="@+id/result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/button"
+        android:layout_marginHorizontal="30sp"
+        android:layout_marginTop="20sp"
+        android:fontFamily="@font/montserrat_alternates_bold"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textSize="25sp" />
+</RelativeLayout>
