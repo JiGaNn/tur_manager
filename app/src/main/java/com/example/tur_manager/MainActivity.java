@@ -23,7 +23,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,8 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private Button button;
     private MultiAutoCompleteTextView res;
 
-    String[] cities = new String[50];
-    HashMap<String, String> iataMap = new HashMap<>();
+    ArrayList<String> cities = new ArrayList<>();
 
     ProgressDialog progressDialog;
     @Override
@@ -49,61 +51,88 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
+                HashMap<String, String> iataMap = new HashMap<>();
                 res.setText("");
 
                 if(user_field.getText().toString().trim().equals(""))
                     Toast.makeText(MainActivity.this, R.string.no_user_input, Toast.LENGTH_LONG).show();
 
                 String input = user_field.getText().toString();
-                cities = input.split(" ");
+                String[] city = input.split(" ");
+                for(String str:city) {
+                    cities.add(str);
+                }
+
+                for (int i=0; i < cities.size()-1; i++) {
+                    String origin = cities.get(i);
+                    String destination = cities.get(i+1);
+                    String iataUrl = "https://www.travelpayouts.com/widgets_suggest_params?q=Из%20"+origin+"%20в%20"+destination;
+                    IataCode iata = new IataCode();
+                    iata.execute(iataUrl);
+                    try {
+                        String[] str = iata.get();
+                        iataMap.put(origin, str[0]);
+                        iataMap.put(destination, str[1]);
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                textView.setText(iataMap.toString());
 
                 try {
-                    getIata();
-                    textView.setText(iataMap.toString());
-                    getContent();
+                    getContent(iataMap);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
+
             }
         });
     }
-    public void getIata() throws ExecutionException, InterruptedException, JSONException {
-        String origin = "", destination = "";
-        for (int i=0; i < cities.length-1; i++) {
-            origin = cities[i];
-            destination = cities[i+1];
-            String iataUrl = "https://www.travelpayouts.com/widgets_suggest_params?q=Из%20"+origin+"%20в%20"+destination;
-            IataCode iata = new IataCode();
-            iata.execute(iataUrl);
-            JSONObject jsonObject = iata.get();
-            iataMap.put(origin, jsonObject.getJSONObject("origin").getString("iata"));
-            iataMap.put(destination, jsonObject.getJSONObject("destination").getString("iata"));
-        }
-    }
     // алгоритм нахождения оптимального тура
-    public void getContent() throws ExecutionException, InterruptedException {
-        String url, minKey = "", destination, origin = iataMap.get(cities[0]);
-        double value, minValue=1000000;
-        iataMap.remove(cities[0]);
-        while (!iataMap.isEmpty()) { // пока карта не пуста
-            for (String key : iataMap.keySet()) { // обрабатываем каждый ключ карты
+    public void getContent(HashMap<String, String> iataMap) throws ExecutionException, InterruptedException {
+        String startCity = cities.get(0);
+        String url, destination, origin = iataMap.get(startCity), minKey = origin;
+        double value, minValue;
+        cities.remove(0);
+        while (!cities.isEmpty()) { // пока массив не пуст
+            minValue=1000000;
+            for (String key : cities) { // обрабатываем каждый город
                 destination = iataMap.get(key); // город прибытия
-                url = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates?origin=" + origin + "&destination=" + destination + "&direct=true&limit=10&token=514ed26973e8ac0aa6fb96f3e3de891d";
+                url = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates?origin=" + origin + "&destination=" + destination + "&direct=true&limit=1&token=514ed26973e8ac0aa6fb96f3e3de891d";
                 Content content = new Content();
                 content.execute(url);
                 value = content.get(); // получаем самый дешёвый билет из класса, где обрабатывается JSON
+                System.out.println(origin + " - " + destination + ": " + value);
+                System.out.println(cities.toString());
                 if (value < minValue && value > 0) {
                     minValue = value;
                     minKey = key;
                 }
             }
+            if (minValue==1000000) {
+                cities.removeAll(cities);
+
+                List keyReverse = new ArrayList();
+                keyReverse.addAll(iataMap.keySet());
+                Collections.reverse(keyReverse);
+                cities.addAll(keyReverse);
+
+                cities.remove(minKey);
+                origin = iataMap.get(startCity);
+                cities.remove(startCity);
+                res.setText("");
+                System.out.println(keyReverse);
+                System.out.println("Пришлось удалить "+minKey);
+                continue;
+            }
             res.append(origin + " - " + minKey + ": " + minValue + "\n");
             origin = iataMap.get(minKey); // будем вылетать из того города, куда прибыли
-            iataMap.remove(minKey); // удаляем ключ из карты
+            cities.remove(minKey); // удаляем ключ из карты
         }
     }
     private class Content extends AsyncTask<String, String, Double>{
@@ -163,20 +192,19 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Double result) {
             super.onPostExecute(result);
-            finish();
         }
     }
-    private class IataCode extends AsyncTask<String, String, JSONObject>{
+    private class IataCode extends AsyncTask<String, String, String[]>{
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-//            if(progressDialog==null)
-//                progressDialog = ProgressDialog.show(MainActivity.this, "Waiting...", "Подгружаем IATA-коды городов...");
-//            else
-//                progressDialog.show();
+            if(progressDialog==null)
+                progressDialog = ProgressDialog.show(MainActivity.this, "Waiting...", "Подгружаем IATA-коды городов...");
+            else
+                progressDialog.show();
         }
         @Override
-        protected JSONObject doInBackground(String... strings) {
+        protected String[] doInBackground(String... strings) {
             HttpURLConnection connection = null;
             BufferedReader reader = null;
 
@@ -194,8 +222,11 @@ public class MainActivity extends AppCompatActivity {
                 while((line = reader.readLine()) !=null )
                     buffer.append(line).append("\n");
 
-                return new JSONObject(buffer.toString());
-
+                String[] str = new String[2];
+                JSONObject jsonObject = new JSONObject(buffer.toString());
+                str[0] = jsonObject.getJSONObject("origin").getString("iata");
+                str[1] = jsonObject.getJSONObject("destination").getString("iata");
+                return str;
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -220,10 +251,9 @@ public class MainActivity extends AppCompatActivity {
 
         @SuppressLint("SetTextI18n")
         @Override
-        protected void onPostExecute(JSONObject result) {
+        protected void onPostExecute(String[] result) {
             super.onPostExecute(result);
-            finish();
-//            progressDialog.dismiss();
+            progressDialog.dismiss();
         }
     }
 }
