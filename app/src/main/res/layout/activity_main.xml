@@ -7,7 +7,6 @@
     android:background="@color/teal_200"
     tools:context=".MainActivity">
 
-
     <TextView
         android:id="@+id/title"
         android:layout_width="match_parent"
@@ -28,7 +27,7 @@
         android:layout_marginTop="30sp"
         android:backgroundTint="@color/black"
         android:fontFamily="@font/montserrat_alternates_bold"
-        android:text="Result" />
+        android:text="Рассчитать тур" />
 
     <EditText
         android:id="@+id/cities"
@@ -38,21 +37,28 @@
         android:ems="10"
         android:layout_marginHorizontal="40sp"
         android:layout_marginTop="20sp"
-        android:fontFamily="sans-serif"
         android:hint="Enter cities that you want to visit"
         android:inputType="textMultiLine"
         android:minHeight="48dp"
         android:textAlignment="center" />
 
-    <MultiAutoCompleteTextView
-        android:id="@+id/result"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/button"
         android:layout_marginHorizontal="30sp"
         android:layout_marginTop="20sp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/notes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:fontFamily="@font/montserrat_alternates_bold"
-        android:textAlignment="center"
-        android:textColor="@color/black"
-        android:textSize="25sp" />
+        android:text="Заметки" />
 </RelativeLayout>
